@@ -33,6 +33,33 @@ export function Dashboard() {
     return Array.from(months).sort().reverse();
   }, [transactions]);
 
+  const getMonthBalance = useMemo(() => {
+    const sortedMonths = Array.from(availableMonths).sort();
+    const balanceMap = new Map<string, { initial: number; final: number; income: number; expense: number }>();
+
+    let currentBalance = initialBalance?.amount || 0;
+
+    sortedMonths.forEach(month => {
+      const monthTransactions = transactions.filter(t => t.reference_month === month);
+      const income = monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+      const expense = monthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+
+      const initialBalance = currentBalance;
+      const finalBalance = currentBalance + income - expense;
+
+      balanceMap.set(month, {
+        initial: initialBalance,
+        final: finalBalance,
+        income,
+        expense
+      });
+
+      currentBalance = finalBalance;
+    });
+
+    return balanceMap;
+  }, [availableMonths, transactions, initialBalance]);
+
   const filteredTransactions = useMemo(() => {
     if (periodFilter === 'all') return transactions;
 
@@ -294,10 +321,8 @@ export function Dashboard() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {availableMonths.map(month => {
-                const monthTransactions = transactions.filter(t => t.reference_month === month);
-                const income = monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-                const expense = monthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-                const balance = income - expense;
+                const monthData = getMonthBalance.get(month);
+                if (!monthData) return null;
 
                 return (
                   <button
@@ -313,17 +338,21 @@ export function Dashboard() {
                     </div>
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Saldo Inicial:</span>
+                        <span className="font-semibold text-gray-700">{formatCurrency(monthData.initial)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
                         <span className="text-gray-600">Entradas:</span>
-                        <span className="font-semibold text-green-600">{formatCurrency(income)}</span>
+                        <span className="font-semibold text-green-600">{formatCurrency(monthData.income)}</span>
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-gray-600">Saídas:</span>
-                        <span className="font-semibold text-red-600">{formatCurrency(expense)}</span>
+                        <span className="font-semibold text-red-600">{formatCurrency(monthData.expense)}</span>
                       </div>
                       <div className="flex justify-between text-xs pt-1 border-t border-blue-200">
-                        <span className="text-gray-700 font-medium">Saldo:</span>
-                        <span className={`font-bold ${balance >= 0 ? 'text-blue-700' : 'text-orange-600'}`}>
-                          {formatCurrency(balance)}
+                        <span className="text-gray-700 font-medium">Saldo Final:</span>
+                        <span className={`font-bold ${monthData.final >= 0 ? 'text-blue-700' : 'text-orange-600'}`}>
+                          {formatCurrency(monthData.final)}
                         </span>
                       </div>
                     </div>
@@ -408,6 +437,8 @@ export function Dashboard() {
       {showMonthDetails && selectedMonth && (
         <MonthDetailsModal
           selectedMonth={selectedMonth}
+          initialBalance={getMonthBalance.get(selectedMonth)?.initial || 0}
+          finalBalance={getMonthBalance.get(selectedMonth)?.final || 0}
           onClose={() => setShowMonthDetails(false)}
         />
       )}

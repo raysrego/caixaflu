@@ -5,9 +5,11 @@ import { useMemo } from 'react';
 type MonthDetailsModalProps = {
   onClose: () => void;
   selectedMonth: string;
+  initialBalance: number;
+  finalBalance: number;
 };
 
-export function MonthDetailsModal({ onClose, selectedMonth }: MonthDetailsModalProps) {
+export function MonthDetailsModal({ onClose, selectedMonth, initialBalance, finalBalance }: MonthDetailsModalProps) {
   const { transactions } = useCashFlow();
 
   const monthTransactions = useMemo(() => {
@@ -118,7 +120,15 @@ export function MonthDetailsModal({ onClose, selectedMonth }: MonthDetailsModalP
         </div>
 
         <div className="p-6 overflow-y-auto flex-1">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">Saldo Inicial</span>
+              </div>
+              <p className="text-2xl font-bold text-gray-700">{formatCurrency(initialBalance)}</p>
+              <p className="text-xs text-gray-500 mt-1">Início do mês</p>
+            </div>
+
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-green-700">Total de Entradas</span>
@@ -137,15 +147,16 @@ export function MonthDetailsModal({ onClose, selectedMonth }: MonthDetailsModalP
               <p className="text-xs text-red-600 mt-1">{expenseTransactions.length} transações</p>
             </div>
 
-            <div className={`border rounded-lg p-4 ${totals.balance >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200'}`}>
+            <div className={`border rounded-lg p-4 ${finalBalance >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200'}`}>
               <div className="flex items-center justify-between mb-2">
-                <span className={`text-sm font-medium ${totals.balance >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
-                  Saldo do Mês
+                <span className={`text-sm font-medium ${finalBalance >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+                  Saldo Final
                 </span>
               </div>
-              <p className={`text-2xl font-bold ${totals.balance >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                {formatCurrency(totals.balance)}
+              <p className={`text-2xl font-bold ${finalBalance >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+                {formatCurrency(finalBalance)}
               </p>
+              <p className="text-xs text-gray-500 mt-1">Fim do mês</p>
             </div>
           </div>
 
