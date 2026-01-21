@@ -3,6 +3,7 @@ import { useCashFlow } from '../contexts/CashFlowContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TransactionForm } from './TransactionForm';
 import { MonthDetailsModal } from './MonthDetailsModal';
+import { EditInitialBalanceModal } from './EditInitialBalanceModal';
 import {
   Plus,
   LogOut,
@@ -13,6 +14,7 @@ import {
   Trash2,
   Calendar,
   FileText,
+  Edit3,
 } from 'lucide-react';
 
 export function Dashboard() {
@@ -20,6 +22,7 @@ export function Dashboard() {
   const { initialBalance, transactions, loading, deleteTransaction } = useCashFlow();
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [showMonthDetails, setShowMonthDetails] = useState(false);
+  const [showEditBalance, setShowEditBalance] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [periodFilter, setPeriodFilter] = useState<'all' | 'month' | 'week'>('month');
 
@@ -210,10 +213,19 @@ export function Dashboard() {
               <p className="text-2xl font-bold">{formatCurrency(summary.expenses)}</p>
             </div>
 
-            <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-4 text-white">
+            <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-4 text-white relative group">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium opacity-90">Saldo Inicial</span>
-                <DollarSign size={20} />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowEditBalance(true)}
+                    className="opacity-0 group-hover:opacity-100 transition bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg p-1.5"
+                    title="Editar saldo inicial"
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                  <DollarSign size={20} />
+                </div>
               </div>
               <p className="text-2xl font-bold">{formatCurrency(initialBalance?.amount || 0)}</p>
             </div>
@@ -440,6 +452,13 @@ export function Dashboard() {
           initialBalance={getMonthBalance.get(selectedMonth)?.initial || 0}
           finalBalance={getMonthBalance.get(selectedMonth)?.final || 0}
           onClose={() => setShowMonthDetails(false)}
+        />
+      )}
+
+      {showEditBalance && (
+        <EditInitialBalanceModal
+          currentBalance={initialBalance?.amount || 0}
+          onClose={() => setShowEditBalance(false)}
         />
       )}
     </div>
