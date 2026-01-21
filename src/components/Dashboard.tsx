@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useCashFlow } from '../contexts/CashFlowContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TransactionForm } from './TransactionForm';
+import { MonthDetailsModal } from './MonthDetailsModal';
 import {
   Plus,
   LogOut,
@@ -11,13 +12,26 @@ import {
   DollarSign,
   Trash2,
   Calendar,
+  FileText,
 } from 'lucide-react';
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
   const { initialBalance, transactions, loading, deleteTransaction } = useCashFlow();
   const [showTransactionForm, setShowTransactionForm] = useState(false);
+  const [showMonthDetails, setShowMonthDetails] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState('');
   const [periodFilter, setPeriodFilter] = useState<'all' | 'month' | 'week'>('month');
+
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    transactions.forEach(t => {
+      if (t.reference_month) {
+        months.add(t.reference_month);
+      }
+    });
+    return Array.from(months).sort().reverse();
+  }, [transactions]);
 
   const filteredTransactions = useMemo(() => {
     if (periodFilter === 'all') return transactions;
@@ -80,6 +94,17 @@ export function Dashboard() {
     if (confirm('Tem certeza que deseja excluir esta transação?')) {
       await deleteTransaction(id);
     }
+  };
+
+  const handleOpenMonthDetails = (month: string) => {
+    setSelectedMonth(month);
+    setShowMonthDetails(true);
+  };
+
+  const formatMonthLabel = (month: string) => {
+    const [year, monthNum] = month.split('-');
+    const date = new Date(parseInt(year), parseInt(monthNum) - 1);
+    return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   };
 
   const getPaymentMethodLabel = (method: string) => {
@@ -261,6 +286,54 @@ export function Dashboard() {
           </div>
         </div>
 
+        {availableMonths.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <FileText size={24} />
+              Ver Detalhes por Mês
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {availableMonths.map(month => {
+                const monthTransactions = transactions.filter(t => t.reference_month === month);
+                const income = monthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+                const expense = monthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+                const balance = income - expense;
+
+                return (
+                  <button
+                    key={month}
+                    onClick={() => handleOpenMonthDetails(month)}
+                    className="bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-2 border-blue-200 rounded-xl p-4 text-left transition group"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-blue-800 capitalize">
+                        {formatMonthLabel(month)}
+                      </span>
+                      <Calendar size={16} className="text-blue-600" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Entradas:</span>
+                        <span className="font-semibold text-green-600">{formatCurrency(income)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Saídas:</span>
+                        <span className="font-semibold text-red-600">{formatCurrency(expense)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs pt-1 border-t border-blue-200">
+                        <span className="text-gray-700 font-medium">Saldo:</span>
+                        <span className={`font-bold ${balance >= 0 ? 'text-blue-700' : 'text-orange-600'}`}>
+                          {formatCurrency(balance)}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-2xl shadow-xl p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Transações</h2>
 
@@ -330,6 +403,13 @@ export function Dashboard() {
 
       {showTransactionForm && (
         <TransactionForm onClose={() => setShowTransactionForm(false)} />
+      )}
+
+      {showMonthDetails && selectedMonth && (
+        <MonthDetailsModal
+          selectedMonth={selectedMonth}
+          onClose={() => setShowMonthDetails(false)}
+        />
       )}
     </div>
   );

@@ -13,6 +13,8 @@ export function TransactionForm({ onClose }: TransactionFormProps) {
   const [description, setDescription] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'debit_card' | 'pix' | 'cash'>('cash');
   const [category, setCategory] = useState<'fixed' | 'variable'>('variable');
+  const [fixedSubcategory, setFixedSubcategory] = useState<'internet' | 'energia' | 'condominio' | 'funcionario'>('internet');
+  const [referenceMonth, setReferenceMonth] = useState(new Date().toISOString().slice(0, 7));
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -34,7 +36,14 @@ export function TransactionForm({ onClose }: TransactionFormProps) {
       amount: numAmount,
       description,
       date,
-      ...(type === 'income' ? { payment_method: paymentMethod } : { category }),
+      reference_month: referenceMonth,
+      ...(type === 'income'
+        ? { payment_method: paymentMethod }
+        : {
+            category,
+            ...(category === 'fixed' ? { fixed_subcategory: fixedSubcategory } : {})
+          }
+      ),
     };
 
     const { error } = await addTransaction(transaction);
@@ -154,21 +163,56 @@ export function TransactionForm({ onClose }: TransactionFormProps) {
               </select>
             </div>
           ) : (
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                Categoria
-              </label>
-              <select
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              >
-                <option value="variable">Variável</option>
-                <option value="fixed">Fixa</option>
-              </select>
-            </div>
+            <>
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                  Categoria
+                </label>
+                <select
+                  id="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as any)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                >
+                  <option value="variable">Variável</option>
+                  <option value="fixed">Fixa</option>
+                </select>
+              </div>
+
+              {category === 'fixed' && (
+                <div>
+                  <label htmlFor="fixed_subcategory" className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Despesa Fixa
+                  </label>
+                  <select
+                    id="fixed_subcategory"
+                    value={fixedSubcategory}
+                    onChange={(e) => setFixedSubcategory(e.target.value as any)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  >
+                    <option value="internet">Internet</option>
+                    <option value="energia">Energia</option>
+                    <option value="condominio">Condomínio</option>
+                    <option value="funcionario">Funcionário</option>
+                  </select>
+                </div>
+              )}
+            </>
           )}
+
+          <div>
+            <label htmlFor="reference_month" className="block text-sm font-medium text-gray-700 mb-2">
+              Mês de Referência
+            </label>
+            <input
+              id="reference_month"
+              type="month"
+              value={referenceMonth}
+              onChange={(e) => setReferenceMonth(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              required
+            />
+          </div>
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
