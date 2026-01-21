@@ -9,17 +9,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export type Todo = {
+export type InitialBalance = {
   id: string;
   user_id: string;
-  title: string;
-  completed: boolean;
+  amount: number;
   created_at: string;
   updated_at: string;
 };
 
-export type Profile = {
+export type Transaction = {
   id: string;
-  email: string;
+  user_id: string;
+  type: 'income' | 'expense';
+  amount: number;
+  description: string;
+  payment_method?: 'credit_card' | 'debit_card' | 'pix' | 'cash';
+  category?: 'fixed' | 'variable';
+  date: string;
   created_at: string;
+  updated_at: string;
 };

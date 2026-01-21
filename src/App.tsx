@@ -1,19 +1,30 @@
 import { useAuth } from './contexts/AuthContext';
+import { useCashFlow } from './contexts/CashFlowContext';
 import { Auth } from './components/Auth';
-import { TodoList } from './components/TodoList';
+import { InitialBalanceSetup } from './components/InitialBalanceSetup';
+import { Dashboard } from './components/Dashboard';
 
 function App() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { initialBalance, loading: cashFlowLoading } = useCashFlow();
 
-  if (loading) {
+  if (authLoading || (user && cashFlowLoading)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-gray-600 text-lg">Loading...</div>
+        <div className="text-gray-600 text-lg">Carregando...</div>
       </div>
     );
   }
 
-  return user ? <TodoList /> : <Auth />;
+  if (!user) {
+    return <Auth />;
+  }
+
+  if (!initialBalance) {
+    return <InitialBalanceSetup />;
+  }
+
+  return <Dashboard />;
 }
 
 export default App;
